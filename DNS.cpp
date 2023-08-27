@@ -9,6 +9,12 @@
 #include <curl/curl.h>
 #include <filesystem>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
 namespace fs = std::filesystem;
 
 void clearConsole() {
@@ -20,16 +26,16 @@ void clearConsole() {
 }
 
 bool isLineToBeProcessed(const std::string& line) {
-    return (line.find("||") == 0) ||        // ÒÔ "||" ¿ªÍ·
-        (line.find("0.0.0.0") == 0) ||   // ÒÔ "0.0.0.0" ¿ªÍ·
-        (line.find("127.0.0.1") == 0) || // ÒÔ "127.0.0.1" ¿ªÍ·
-        (line.find("::") == 0);          // ÒÔ "::" ¿ªÍ·
+    return (line.find("||") == 0) ||        // ä»¥ "||" å¼€å¤´
+        (line.find("0.0.0.0") == 0) ||   // ä»¥ "0.0.0.0" å¼€å¤´
+        (line.find("127.0.0.1") == 0) || // ä»¥ "127.0.0.1" å¼€å¤´
+        (line.find("::") == 0);          // ä»¥ "::" å¼€å¤´
 }
 
 void processRules(const std::string& inputFilePath, const std::string& outputFilePath) {
     std::ifstream inputFile(inputFilePath);
     if (!inputFile.is_open()) {
-        std::cerr << "ÎÞ·¨´ò¿ªÊäÈëÎÄ¼þ£º" << inputFilePath << std::endl;
+        std::cerr << "æ— æ³•æ‰“å¼€è¾“å…¥æ–‡ä»¶ï¼š" << inputFilePath << std::endl;
         return;
     }
 
@@ -51,7 +57,7 @@ void processRules(const std::string& inputFilePath, const std::string& outputFil
 
     std::ofstream outputFile(outputFilePath, std::ios_base::app);
     if (!outputFile.is_open()) {
-        std::cerr << "ÎÞ·¨´ò¿ªÊä³öÎÄ¼þ£º" << outputFilePath << std::endl;
+        std::cerr << "æ— æ³•æ‰“å¼€è¾“å‡ºæ–‡ä»¶ï¼š" << outputFilePath << std::endl;
         return;
     }
 
@@ -61,14 +67,18 @@ void processRules(const std::string& inputFilePath, const std::string& outputFil
 
     outputFile.close();
 
-    std::cout << "¹æÔòÒÑ´¦Àí²¢È¥ÖØ¡£" << std::endl;
+    std::cout << "è§„åˆ™å·²å¤„ç†å¹¶åŽ»é‡ã€‚" << std::endl;
 }
 
 bool downloadRulesWithProxy(const std::string& url, const std::string& filename, CURL* curl) {
     FILE* file;
+#ifdef _WIN32
     errno_t err = fopen_s(&file, filename.c_str(), "ab");
-    if (err != 0 || !file) {
-        std::cerr << "ÎÞ·¨´´½¨ÎÄ¼þ£º" << filename << std::endl;
+#else
+    file = fopen(filename.c_str(), "ab");
+#endif
+    if (!file) {
+        std::cerr << "æ— æ³•åˆ›å»ºæ–‡ä»¶ï¼š" << filename << std::endl;
         return false;
     }
 
@@ -83,10 +93,10 @@ bool downloadRulesWithProxy(const std::string& url, const std::string& filename,
         do {
             res = curl_easy_perform(curl);
             if (res != CURLE_OK) {
-                std::cerr << "ÏÂÔØÊ§°Ü£º" << curl_easy_strerror(res) << std::endl;
+                std::cerr << "ä¸‹è½½å¤±è´¥ï¼š" << curl_easy_strerror(res) << std::endl;
                 retryCount--;
                 if (retryCount > 0) {
-                    std::cout << "µÈ´ý5ÃëºóÖØÊÔ..." << std::endl;
+                    std::cout << "ç­‰å¾…5ç§’åŽé‡è¯•..." << std::endl;
                     std::this_thread::sleep_for(std::chrono::seconds(3));
                 }
             }
@@ -95,13 +105,13 @@ bool downloadRulesWithProxy(const std::string& url, const std::string& filename,
         fclose(file);
 
         if (res != CURLE_OK) {
-            std::cerr << "¶à´ÎÖØÊÔºóÈÔÈ»ÎÞ·¨ÏÂÔØÎÄ¼þ£º" << url << std::endl;
+            std::cerr << "å¤šæ¬¡é‡è¯•åŽä»ç„¶æ— æ³•ä¸‹è½½æ–‡ä»¶ï¼š" << url << std::endl;
             remove(filename.c_str());
             return false;
         }
     }
     else {
-        std::cerr << "CURL ³õÊ¼»¯Ê§°Ü¡£" << std::endl;
+        std::cerr << "CURL åˆå§‹åŒ–å¤±è´¥ã€‚" << std::endl;
         fclose(file);
         return false;
     }
@@ -112,20 +122,20 @@ bool downloadRulesWithProxy(const std::string& url, const std::string& filename,
 void removeLinesStartingWithAsterisks(const std::string& filePath) {
     std::ifstream inputFile(filePath);
     if (!inputFile.is_open()) {
-        std::cerr << "ÎÞ·¨´ò¿ªÎÄ¼þ£º" << filePath << std::endl;
+        std::cerr << "æ— æ³•æ‰“å¼€æ–‡ä»¶ï¼š" << filePath << std::endl;
         return;
     }
 
     std::ofstream outputFile("temp_" + filePath);
     if (!outputFile.is_open()) {
-        std::cerr << "ÎÞ·¨´ò¿ªÎÄ¼þ£º" << "temp_" + filePath << std::endl;
+        std::cerr << "æ— æ³•æ‰“å¼€æ–‡ä»¶ï¼š" << "temp_" + filePath << std::endl;
         inputFile.close();
         return;
     }
 
     std::string line;
     while (std::getline(inputFile, line)) {
-        if (line.find("**") != 0) {  // ²»ÒÔ "**" ¿ªÍ·µÄÐÐ±£Áô
+        if (line.find("**") != 0) {  // ä¸ä»¥ "**" å¼€å¤´çš„è¡Œä¿ç•™
             outputFile << line << std::endl;
         }
     }
@@ -133,13 +143,13 @@ void removeLinesStartingWithAsterisks(const std::string& filePath) {
     inputFile.close();
     outputFile.close();
 
-    if (remove(filePath.c_str()) == 0) {  // É¾³ýÔ­ÎÄ¼þ
-        if (rename(("temp_" + filePath).c_str(), filePath.c_str()) != 0) {  // ÖØÃüÃûÁÙÊ±ÎÄ¼þ
-            std::cerr << "ÎÞ·¨ÖØÃüÃûÁÙÊ±ÎÄ¼þ£º" << ("temp_" + filePath) << std::endl;
+    if (remove(filePath.c_str()) == 0) {  // åˆ é™¤åŽŸæ–‡ä»¶
+        if (rename(("temp_" + filePath).c_str(), filePath.c_str()) != 0) {  // é‡å‘½åä¸´æ—¶æ–‡ä»¶
+            std::cerr << "æ— æ³•é‡å‘½åä¸´æ—¶æ–‡ä»¶ï¼š" << ("temp_" + filePath) << std::endl;
         }
     }
     else {
-        std::cerr << "ÎÞ·¨É¾³ýÎÄ¼þ£º" << filePath << std::endl;
+        std::cerr << "æ— æ³•åˆ é™¤æ–‡ä»¶ï¼š" << filePath << std::endl;
     }
 }
 
@@ -151,7 +161,7 @@ int main() {
 
     std::ifstream ruleListFile(fs::absolute("rule.txt").string());
     if (!ruleListFile.is_open()) {
-        std::cerr << "ÎÞ·¨´ò¿ª¹æÔòÁÐ±íÎÄ¼þ£º" << fs::absolute("rule.txt").string() << std::endl;
+        std::cerr << "æ— æ³•æ‰“å¼€è§„åˆ™åˆ—è¡¨æ–‡ä»¶ï¼š" << fs::absolute("rule.txt").string() << std::endl;
         return 1;
     }
 
@@ -162,9 +172,9 @@ int main() {
 
     curl_easy_cleanup(curl);
 
-    std::cout << "°´ÏÂ Enter ¼ü¿ªÊ¼×Ô¶¯Ñ­»·Ö´ÐÐ£¬Ã¿6Ð¡Ê±Ö´ÐÐÒ»´Î¡£" << std::endl;
+    std::cout << "æŒ‰ä¸‹ Enter é”®å¼€å§‹è‡ªåŠ¨å¾ªçŽ¯æ‰§è¡Œï¼Œæ¯6å°æ—¶æ‰§è¡Œä¸€æ¬¡ã€‚" << std::endl;
     std::cin.get();
-    clearConsole();  // Çå¿ÕÖÕ¶ËÄÚÈÝ
+    clearConsole();  // æ¸…ç©ºç»ˆç«¯å†…å®¹
     while (true) {
         outputFilePath = fs::absolute("output_rules.txt").string();
         std::remove("temp_rules.txt");
@@ -186,10 +196,13 @@ int main() {
 
         clearConsole();
 
-        std::cout << "¹æÔòÎÄ¼þÒÑÏÂÔØ¡¢ºÏ²¢²¢È¥ÖØ¡£ÏÂÒ»´ÎÖ´ÐÐ½«ÔÚ6Ð¡Ê±ºó";
-        std::cout << "½øÐÐ¡£" << std::endl;
+        std::cout << "è§„åˆ™æ–‡ä»¶å·²ä¸‹è½½ã€åˆå¹¶å¹¶åŽ»é‡ã€‚ä¸‹ä¸€æ¬¡æ‰§è¡Œå°†åœ¨6å°æ—¶åŽè¿›è¡Œã€‚" << std::endl;
 
-        std::this_thread::sleep_until(std::chrono::system_clock::time_point(std::chrono::seconds(nextExecutionTime)));
+#ifdef _WIN32
+        Sleep(6 * 60 * 60 * 1000);  // Windowsä¸‹çš„ç¡çœ å‡½æ•°
+#else
+        sleep(6 * 60 * 60);  // Linuxä¸‹çš„ç¡çœ å‡½æ•°
+#endif
 
         removeLinesStartingWithAsterisks(outputFilePath);
     }
