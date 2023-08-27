@@ -21,7 +21,7 @@
 
 ## 依赖
 
-- libcurl
+- libcurl[https://curl.se/libcurl/]
 
 ## 注意事项
 
