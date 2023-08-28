@@ -1,4 +1,4 @@
-/*Copyright (c) 2023 Kolomina
+/*Copyright (c) 2023 curl
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,7 @@ SOFTWARE.
 
 namespace fs = std::filesystem;
 
+// 清空终端屏幕内容
 void clearConsole() {
 #ifdef _WIN32
     system("cls");
@@ -47,6 +48,7 @@ void clearConsole() {
 #endif
 }
 
+// 判断是否需要处理该行规则
 bool isLineToBeProcessed(const std::string& line) {
     return (line.find("||") == 0) ||        // 以 "||" 开头
         (line.find("0.0.0.0") == 0) ||   // 以 "0.0.0.0" 开头
@@ -54,6 +56,7 @@ bool isLineToBeProcessed(const std::string& line) {
         (line.find("::") == 0);          // 以 "::" 开头
 }
 
+// 处理规则文件，去重并写入输出文件
 void processRules(const std::string& inputFilePath, const std::string& outputFilePath) {
     std::ifstream inputFile(inputFilePath);
     if (!inputFile.is_open()) {
@@ -92,6 +95,7 @@ void processRules(const std::string& inputFilePath, const std::string& outputFil
     std::cout << "规则已处理并去重。" << std::endl;
 }
 
+// 使用代理下载规则文件
 bool downloadRulesWithProxy(const std::string& url, const std::string& filename, CURL* curl) {
     FILE* file;
 #ifdef _WIN32
@@ -107,7 +111,7 @@ bool downloadRulesWithProxy(const std::string& url, const std::string& filename,
     if (curl) {
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, file);
-        curl_easy_setopt(curl, CURLOPT_PROXY, "http://127.0.0.1:7890");
+        curl_easy_setopt(curl, CURLOPT_PROXY, "http://127.0.0.1:7890");  // 设置代理
         curl_easy_setopt(curl, CURLOPT_PROXYTYPE, CURLPROXY_HTTP);
 
         CURLcode res;
@@ -141,6 +145,7 @@ bool downloadRulesWithProxy(const std::string& url, const std::string& filename,
     return true;
 }
 
+// 移除以 "**" 开头的行
 void removeLinesStartingWithAsterisks(const std::string& filePath) {
     std::ifstream inputFile(filePath);
     if (!inputFile.is_open()) {
