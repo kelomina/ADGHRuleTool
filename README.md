@@ -2,6 +2,9 @@
 
 这个工具用于处理规则文件，去重、下载、合并等操作。它可以帮助你从指定的URL下载规则文件，并将规则合并到一个输出文件中，同时还会进行去重处理。
 
+#交流论坛
+https://kolobbs.kolostudio.fun/forum.php?mod=forumdisplay&fid=3
+
 ## 功能特点
 
 - 跨平台。
